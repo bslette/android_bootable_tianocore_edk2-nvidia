@@ -562,6 +562,8 @@ menu "Hardware support"
       bool
       config USE_40_PERCENT_LOGO_SCALING
       bool
+      config USE_50_PERCENT_LOGO_SCALING
+      bool
       config USE_FULL_SCREEN_LOGO_SCALING
       bool
 
@@ -575,6 +577,7 @@ menu "Hardware support"
       depends on LOGO
       range 0 1000
       default 1000 if USE_FULL_SCREEN_LOGO_SCALING
+      default 500 if USE_50_PERCENT_LOGO_SCALING
       default 400 if USE_40_PERCENT_LOGO_SCALING
       default 0 if USE_NO_LOGO_SCALING
       default 400
@@ -588,6 +591,7 @@ menu "Hardware support"
       depends on LOGO
       range 0 1000
       default 500 if USE_FULL_SCREEN_LOGO_SCALING
+      default 500 if USE_50_PERCENT_LOGO_SCALING
       default 382 if USE_40_PERCENT_LOGO_SCALING
       default 500 if USE_NO_LOGO_SCALING
       default 382
