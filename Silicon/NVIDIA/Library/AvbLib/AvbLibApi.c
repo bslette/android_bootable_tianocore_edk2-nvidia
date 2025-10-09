@@ -128,6 +128,11 @@ ReadIsDeviceUnlocked (
   AvbIOResult  AvbResult    = AVB_IO_RESULT_OK;
   BOOLEAN      DeviceLocked = FALSE;
 
+  if (!IsOpteePresent ()) {
+    *IsUnlocked = TRUE;
+    return AVB_IO_RESULT_OK;
+  }
+
   Status = AvbReadDeviceLockedState (&DeviceLocked);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Got %r trying to read locked state from AVB TA\n", __FUNCTION__, Status));
@@ -511,6 +516,10 @@ WriteRollbackIndex (
   AvbIOResult                AvbResult         = AVB_IO_RESULT_OK;
   OPTEE_INVOKE_FUNCTION_ARG  InvokeFunctionArg = { 0 };
 
+  if (!IsOpteePresent ()) {
+    return AVB_IO_RESULT_OK;
+  }
+
   InvokeFunctionArg.Function                = TA_AVB_CMD_WRITE_ROLLBACK_INDEX;
   InvokeFunctionArg.Params[0].Attribute     = OPTEE_MESSAGE_ATTRIBUTE_TYPE_VALUE_INPUT;
   InvokeFunctionArg.Params[0].Union.Value.A = (UINT64)RollbackIndexLocation;
@@ -550,6 +559,11 @@ ReadRollbackIndex (
   EFI_STATUS                 Status            = EFI_SUCCESS;
   AvbIOResult                AvbResult         = AVB_IO_RESULT_OK;
   OPTEE_INVOKE_FUNCTION_ARG  InvokeFunctionArg = { 0 };
+
+  if (!IsOpteePresent ()) {
+    *OutRollbackIndex = 0;
+    return AVB_IO_RESULT_OK;
+  }
 
   if (OutRollbackIndex == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: OutRollbackIndex == NULL\n", __FUNCTION__));
@@ -643,6 +657,10 @@ ReadPersistentValue (
   VOID                       *NameBuffer       = NULL;
   UINT32                     NameLength;
 
+  if (!IsOpteePresent ()) {
+    return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+  }
+
   if ((OutBuffer == NULL) || (OutNumBytesRead == NULL)) {
     DEBUG ((DEBUG_ERROR, "%a: OutBuffer or OutNumBytesRead == NULL\n", __FUNCTION__));
     return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
@@ -701,6 +719,10 @@ WritePersistentValue (
   OPTEE_INVOKE_FUNCTION_ARG  InvokeFunctionArg = { 0 };
   VOID                       *NameBuffer       = NULL;
   UINT32                     NameLength;
+
+  if (!IsOpteePresent ()) {
+    return AVB_IO_RESULT_OK;
+  }
 
   NameLength = AsciiStrLen (Name);
   NameBuffer = AllocateCopyPool (NameLength, Name);
@@ -1126,10 +1148,12 @@ AvbVerifyBoot (
 
   mControllerHandle = ControllerHandle;
 
-  Status = AvbOpteeInterfaceInit ();
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a:Avb OP-TEE initialization failed with %r\n", __func__, Status));
-    goto Exit;
+  if (IsOpteePresent ()) {
+    Status = AvbOpteeInterfaceInit ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a:Avb OP-TEE initialization failed with %r\n", __func__, Status));
+      goto Exit;
+    }
   }
 
   Status = VerifiedBootGetBootState (IsRecovery, &BootState, &SlotData);
@@ -1142,10 +1166,18 @@ AvbVerifyBoot (
     *AvbCmdline = SlotData->cmdline;
   }
 
-  Status = AvbPassOpteeBootInfo (NULL, SlotData, BootState);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: %r to set ROT bootinfo to Optee\n", __FUNCTION__, Status));
-    goto Exit;
+  if (IsOpteePresent ()) {
+    Status = AvbPassOpteeBootInfo (NULL, SlotData, BootState);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: %r to set ROT bootinfo to Optee\n", __FUNCTION__, Status));
+      goto Exit;
+    }
+  } else {
+    Status = BootConfigAddSerialNumber (NULL, NULL, 0);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Got %r trying to add serial number to BootConfigProtocol\n", __FUNCTION__, Status));
+      goto Exit;
+    }
   }
 
   mAvbBootState = BootState;
