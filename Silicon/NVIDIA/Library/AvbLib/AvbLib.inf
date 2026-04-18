@@ -39,8 +39,8 @@
   libavb/libavb/avb_util.c
   libavb/libavb/avb_vbmeta_image.c
   libavb/libavb/avb_version.c
-  libavb/libavb/sha/sha256_impl.c
-  libavb/libavb/sha/sha512_impl.c
+  libavb/libavb/crypto/sha256_impl.c
+  libavb/libavb/crypto/sha512_impl.c
 
   # Avb UI - Android Verified Boot warning screens
   AvbUi/AvbUi.c
@@ -87,4 +87,4 @@
   gNVIDIAAvbUiProtocolGuid           ## CONSUMES
 
 [BuildOptions]
-  GCC:*_*_*_CC_FLAGS = -DAVB_COMPILATION -DAVB_ENABLE_DEBUG
+  GCC:*_*_*_CC_FLAGS = -DAVB_COMPILATION -DAVB_ENABLE_DEBUG -DSIZE_MAX="(size_t)-1"
