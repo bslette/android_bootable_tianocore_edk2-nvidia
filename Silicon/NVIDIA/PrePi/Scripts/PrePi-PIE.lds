@@ -22,9 +22,12 @@ SECTIONS
     . = ALIGN(0x20);
     PROVIDE(__reloc_start = .);
     *(.rel .rel.*)
-    *(.rela .rela.*)
+    *(.rela.text .rela.text.* .rela.rodata .rela.rodata.* .rela.data .rela.data.* .rela.got .rela.got.* .rela.bss .rela.bss.*)
     PROVIDE(__reloc_end = .);
   }
+
+  .rela.dyn : { *(.rela.dyn) }
+  .rela.plt : { *(.rela.plt) }
 
   .note (INFO) : { *(.note.gnu.build-id) }
 
